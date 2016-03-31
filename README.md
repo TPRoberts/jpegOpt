@@ -1,5 +1,7 @@
 # How to use it
-jpegOpt.py <Source> <Destination> <New Quality>
+    $ jpegOpt.py Source Destination New Quality
+    eg.
+    $ jpegOpt.py C:\Source C:\Destination 20    
 
 ### Arguments
 
