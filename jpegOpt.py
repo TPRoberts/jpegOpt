@@ -6,11 +6,26 @@
 ########                  31/03/2016                   ########
 ###############################################################
 from __future__ import division
+from PIL import Image
 import os
 import sys
 import logging
-from PIL import Image
+import fnmatch
 
+
+
+# Search DIR for all files with a predfined suffix
+# Input :- Path to the DIR
+# Input :- The suffix
+# Output :- All files in the path DIR with that suffix
+def findRecursively(path, suffix):
+    patten = "*." + suffix
+    matches = []
+    for root, dirnames, filenames in os.walk(path):
+        for filename in fnmatch.filter(filenames, patten):
+            matches.append(os.path.join(root, filename))          
+
+    return matches
 
 # Optimise jpeg function
 # Input :- Source DIR
@@ -20,27 +35,28 @@ from PIL import Image
 def jpegOpt(source, destination, newQuality):
     # Return Value initialisations
     returnValue = True
-    
+    jpegs = []    
     logging.info("Scanning %s for jpegs", source)
     # Scan the sour DIR to find all APK's init
-    jpegs = [f for f in os.listdir(source) if f.endswith('jpg')]
-    if len(jpegs) == 0:
-        jpegs = [f for f in os.listdir(source) if f.endswith('jpeg')]
+    #jpegs = [f for f in os.listdir(source) if f.endswith('jpg')]
+    jpegs = findRecursively(source, "jp*g")
     
     if (len(jpegs) > 0):
         logging.info("Found %d jpegs to optimise", len(jpegs))
         for i in range(len(jpegs)):
             # Start optimising jepg's
-            src = os.path.abspath(source + "/" + jpegs[i])
-            dest =  os.path.abspath(destination + "/" + jpegs[i])
-            if not os.path.isdir(destination):
-                os.mkdir(destination)
-            image = Image.open(src)
-            image.save(dest,quality=int(newQuality),optimize=True)
+            # Start optimising jepg's
+            src = os.path.abspath(jpegs[i])
+            dest =  os.path.abspath(jpegs[i].replace(source, destination))
+            jpgDest = os.path.dirname(os.path.abspath(dest))
+            if not os.path.isdir(jpgDest):
+                os.makedirs(jpgDest)
             srcSize = os.path.getsize(src)
+            image = Image.open(src)
+            image.save(dest,optimize=True)
             destSize = os.path.getsize(dest)
             percentDiff = ((srcSize - destSize) / srcSize) * 100
-            logging.info("Reduced image %d by %.2f %%", i + 1 , percentDiff)
+            logging.info("Reduced image %s by %.2f %%", src, percentDiff)
     else:
         # We didn't find any jpeg's
         logging.error("Found no jpeg's in %s", source)
